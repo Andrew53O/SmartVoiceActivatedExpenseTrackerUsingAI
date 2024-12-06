@@ -1,9 +1,9 @@
 <?php
 // db.php
-$servername = "localhost";
+$servername = "localhost:8888";
 $username = "root";
 $password = "your_db_password"; // Replace with your MySQL password
-$dbname = "accounting_db";
+$dbname = "voice_based_accounting_system";
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
