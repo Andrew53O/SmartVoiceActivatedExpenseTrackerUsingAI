@@ -23,7 +23,7 @@ require 'db.php';
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
     <style>
         .dashboard-container {
-            max-width: 1200px;
+            width: 80%;
             margin: 0 auto;
             padding: 20px;
         }
@@ -66,11 +66,14 @@ require 'db.php';
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
+            width: 100%;
         }
 
         table.dataTable {
             border-collapse: collapse !important;
             width: 100% !important;
+            table-layout: fixed;
+            margin: 0 !important;
         }
 
         table.dataTable th,
@@ -82,6 +85,7 @@ require 'db.php';
         table.dataTable thead th {
             background: #f8f9fa;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         #chartContainer {
@@ -243,6 +247,8 @@ require 'db.php';
                         }]
                     },
                     options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
                         scales: {
                             y: {
                                 beginAtZero: true
