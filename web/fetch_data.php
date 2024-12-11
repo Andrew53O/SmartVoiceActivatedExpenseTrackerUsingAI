@@ -3,15 +3,15 @@
 session_start();
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['pid'])) {
     echo json_encode([]);
     exit();
 }
 
 require 'db.php';
 
-$user_id = $_SESSION['user_id'];
-$sql = "SELECT * FROM accounting WHERE user_id = ? ORDER BY timestamp DESC";
+$user_id = $_SESSION['pid'];
+$sql = "SELECT * FROM accounting WHERE pid = ? ORDER BY createdOn DESC";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();

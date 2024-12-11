@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $message = "All fields are required.";
     } else {
         // Retrieve user from database
-        $stmt = $conn->prepare("SELECT id, password FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT pid, password FROM person WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->fetch();
             if (password_verify($password, $hashed_password)) {
                 // Password is correct
-                $_SESSION['user_id'] = $user_id;
+                $_SESSION['pid'] = $user_id;
                 $_SESSION['email'] = $email;
                 header("Location: dashboard.php");
                 exit();
@@ -43,16 +43,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html>
 <head>
     <title>Login - Voice Accounting</title>
-    <style>
-        /* Basic styling for the form */
-        body { font-family: Arial, sans-serif; background-color: #f2f2f2; }
-        .container { width: 300px; padding: 20px; background-color: white; margin: auto; margin-top: 100px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input[type=email], input[type=password] { width: 100%; padding: 10px; margin: 5px 0 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-        input[type=submit] { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        input[type=submit]:hover { background-color: #45a049; }
-        .message { color: red; }
-        a { display: block; text-align: center; margin-top: 10px; color: #4CAF50; text-decoration: none; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">

@@ -19,7 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $message = "Passwords do not match.";
     } else {
         // Check if email already exists
-        $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT pid FROM Person WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
@@ -30,8 +30,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Hash the password
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-            // Insert into database
-            $stmt = $conn->prepare("INSERT INTO users (email, password) VALUES (?, ?)");
+            // Insert into Person table
+            $stmt = $conn->prepare("INSERT INTO Person (email, password) VALUES (?, ?)");
             $stmt->bind_param("ss", $email, $hashed_password);
             if ($stmt->execute()) {
                 $_SESSION['user_id'] = $stmt->insert_id;
@@ -51,22 +51,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html>
 <head>
     <title>Register - Voice Accounting</title>
-    <style>
-        /* Basic styling for the form */
-        body { font-family: Arial, sans-serif; background-color: #f2f2f2; }
-        .container { width: 300px; padding: 20px; background-color: white; margin: auto; margin-top: 100px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input[type=email], input[type=password] { width: 100%; padding: 10px; margin: 5px 0 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-        input[type=submit] { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        input[type=submit]:hover { background-color: #45a049; }
-        .message { color: red; }
-        a { display: block; text-align: center; margin-top: 10px; color: #4CAF50; text-decoration: none; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <h2>Register</h2>
         <?php if($message != ''): ?>
-            <p class="message"><?php echo $message; ?></p>
+            <p class="message"><?php echo htmlspecialchars($message); ?></p>
         <?php endif; ?>
         <form method="POST" action="register.php">
             <label for="email">Email:</label>

@@ -1,7 +1,7 @@
 <?php
 // dashboard.php
 session_start();
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['pid'])) {
     header("Location: login.php");
     exit();
 }
@@ -10,94 +10,176 @@ require 'db.php';
 
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>Dashboard - Voice Accounting</title>
-    <!-- Include DataTables CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
-    <!-- Include Chart.js -->
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Include jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Include DataTables JS -->
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        h1 {
-            text-align: center;
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
         }
+
+        .logout-btn {
+            background: #ff4444;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
         #filterContainer {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
-        #filterContainer label {
-            margin-right: 10px;
+
+        #filterContainer select,
+        #filterContainer input[type="date"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 15px;
+            font-family: 'Inter', sans-serif;
         }
+
+        .dataTables_wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        table.dataTable {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+
+        table.dataTable th,
+        table.dataTable td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        table.dataTable thead th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
         #chartContainer {
-            width: 80%;
-            margin: auto;
-            margin-top: 40px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
         }
-        .logout {
-            float: right;
-            margin-top: -60px;
+
+        .dataTables_length select,
+        .dataTables_filter input {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 0 5px;
+        }
+
+        .dataTables_paginate .paginate_button {
+            padding: 6px 12px;
+            margin: 0 2px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .dataTables_paginate .paginate_button.current {
+            background: #007bff;
+            color: white !important;
+            border-color: #007bff;
         }
     </style>
 </head>
+
 <body>
-    <h1>Voice-Based Accounting Dashboard</h1>
-    <div class="logout">
-        <a href="logout.php">Logout</a>
-    </div>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Voice-Based Accounting Dashboard</h1>
+            <a href="logout.php" class="logout-btn">Logout</a>
+        </div>
 
-    <div id="filterContainer">
-        <label for="categoryFilter">Category:</label>
-        <select id="categoryFilter">
-            <option value="">All</option>
-            <option value="breakfast">Breakfast</option>
-            <option value="lunch">Lunch</option>
-            <option value="dinner">Dinner</option>
-            <option value="snack">Snack</option>
-        </select>
+        <div id="filterContainer">
+            <label for="categoryFilter">Category:</label>
+            <select id="categoryFilter">
+                <option value="">All</option>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+                <option value="snack">Snack</option>
+            </select>
 
-        <label for="dateFilter">Date:</label>
-        <input type="date" id="dateFilter">
-    </div>
+            <label for="dateFilter">Date:</label>
+            <input type="date" id="dateFilter">
+        </div>
 
-    <table id="accountingTable" class="display">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Item</th>
-                <th>Category</th>
-                <th>Cost (NTD)</th>
-                <th>Timestamp</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Data will be populated here via JavaScript -->
-        </tbody>
-    </table>
+        <div class="table-container">
+            <table id="accounting" class="display">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Cost (NTD)</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be populated here via JavaScript -->
+                </tbody>
+            </table>
+        </div>
 
-    <div id="chartContainer">
-        <canvas id="expenseChart"></canvas>
+        <div id="chartContainer">
+            <canvas id="expenseChart"></canvas>
+        </div>
     </div>
 
     <script>
         $(document).ready(function() {
-            let table = $('#accountingTable').DataTable({
+            let table = $('#accounting').DataTable({
                 "ajax": {
                     "url": "fetch_data.php",
                     "dataSrc": ""
                 },
-                "columns": [
-                    { "data": "id" },
-                    { "data": "item" },
-                    { "data": "category" },
-                    { "data": "cost" },
-                    { "data": "timestamp" }
+                "columns": [{
+                        "data": "id"
+                    },
+                    {
+                        "data": "item"
+                    },
+                    {
+                        "data": "category"
+                    },
+                    {
+                        "data": "cost"
+                    },
+                    {
+                        "data": "timestamp"
+                    }
                 ]
             });
 
@@ -181,7 +263,7 @@ require 'db.php';
                         let date = $('#dateFilter').val();
                         let filteredData = data.filter(record => {
                             return (category === "" || record.category === category) &&
-                                   (date === "" || record.timestamp.split(' ')[0] === date);
+                                (date === "" || record.timestamp.split(' ')[0] === date);
                         });
                         createChart(filteredData);
                     },
@@ -196,4 +278,5 @@ require 'db.php';
         });
     </script>
 </body>
+
 </html>
