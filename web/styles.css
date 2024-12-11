@@ -106,3 +106,32 @@ a:hover {
     width: 100% !important;
     height: 100% !important;
 }
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    max-width: 100%;
+}
+
+.dataTable {
+    width: 100% !important;
+}
+
+@media screen and (max-width: 768px) {
+    .dashboard-container {
+        width: 95%;
+        padding: 10px;
+    }
+    
+    #filterContainer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #filterContainer select,
+    #filterContainer input[type="date"] {
+        width: 100%;
+        margin-right: 0;
+    }
+}

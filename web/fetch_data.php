@@ -1,5 +1,4 @@
 <?php
-// fetch_data.php
 session_start();
 header('Content-Type: application/json');
 

@@ -148,7 +148,7 @@ require 'db.php';
                         <th>Item</th>
                         <th>Category</th>
                         <th>Cost (NTD)</th>
-                        <th>Timestamp</th>
+                        <th>DateTime</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -170,7 +170,7 @@ require 'db.php';
                     "dataSrc": ""
                 },
                 "columns": [{
-                        "data": "id"
+                        "data": "aid"
                     },
                     {
                         "data": "item"
@@ -182,7 +182,7 @@ require 'db.php';
                         "data": "cost"
                     },
                     {
-                        "data": "timestamp"
+                        "data": "createdOn"
                     }
                 ]
             });
