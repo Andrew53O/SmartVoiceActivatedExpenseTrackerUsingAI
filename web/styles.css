@@ -91,21 +91,7 @@ a:hover {
     color: #45a049;
 }
 
-#chartContainer {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-top: 30px;
-    position: relative;
-    height: 400px;  /* Set a fixed height */
-    width: 100%;
-}
 
-#expenseChart {
-    width: 100% !important;
-    height: 100% !important;
-}
 
 .table-responsive {
     overflow-x: auto;
@@ -118,9 +104,120 @@ a:hover {
     width: 100% !important;
 }
 
+.dataTables_wrapper {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    width: 100%;
+    box-sizing: border-box;  /* Add this to include padding in width calculation */
+}
+
+#filterContainer,
+.dataTables_wrapper,
+#chartContainer {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Define variables for chart size */
+:root {
+    --chart-width: 100%;
+    --chart-height: 300px; /* Adjust this value to change chart height */
+}
+
+#chartContainer {
+    width: var(--chart-width);
+    height: var(--chart-height);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+#expenseChart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.table-container {
+    width: 100%;  /* Add this new class */
+}
+
+/* Styles for the date filter button and pop-up */
+#dateFilterBtn {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    background-color: white;
+    position: relative;
+}
+
+#dateFilterOptions {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    padding: 12px;
+    z-index: 1;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    top: 40px;
+}
+
+#dateFilterOptions a {
+    color: black;
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+}
+
+#dateFilterOptions a:hover {
+    background-color: #f1f1f1;
+}
+
+.date-range-inputs {
+    display: none;
+    margin-top: 10px;
+}
+
+.date-range-inputs input {
+    padding: 6px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    width: 120px;
+}
+
+.date-range-inputs button {
+    padding: 6px 12px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.date-range-inputs button:hover {
+    background-color: #45a049;
+}
+
 @media screen and (max-width: 768px) {
     .dashboard-container {
-        width: 95%;
+        width: 100%;
         padding: 10px;
     }
     

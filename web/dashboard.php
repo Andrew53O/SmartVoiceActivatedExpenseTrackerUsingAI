@@ -21,6 +21,9 @@ require 'db.php';
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <style>
         .dashboard-container {
             width: 80%;
@@ -49,6 +52,8 @@ require 'db.php';
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         #filterContainer select,
@@ -58,15 +63,6 @@ require 'db.php';
             border-radius: 4px;
             margin-right: 15px;
             font-family: 'Inter', sans-serif;
-        }
-
-        .dataTables_wrapper {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            width: 100%;
         }
 
         table.dataTable {
@@ -116,6 +112,69 @@ require 'db.php';
             color: white !important;
             border-color: #007bff;
         }
+
+        /* Styles for the date filter button and pop-up */
+        #dateFilterBtn {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            background-color: white;
+            position: relative;
+        }
+
+        #dateFilterOptions {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            padding: 12px;
+            z-index: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            top: 40px;
+        }
+
+        #dateFilterOptions a {
+            color: black;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+        }
+
+        #dateFilterOptions a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .date-range-inputs {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .date-range-inputs input {
+            padding: 6px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            width: 120px;
+        }
+
+        .date-range-inputs button {
+            padding: 6px 12px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .date-range-inputs button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 
@@ -136,8 +195,22 @@ require 'db.php';
                 <option value="snack">Snack</option>
             </select>
 
-            <label for="dateFilter">Date:</label>
-            <input type="date" id="dateFilter">
+            <label for="dateFilterBtn">Date:</label>
+            <button id="dateFilterBtn">All Time</button>
+            <div id="dateFilterOptions">
+                <a data-value="all">All Time</a>
+                <a data-value="today">Today</a>
+                <a data-value="week">Week</a>
+                <a data-value="month">Month</a>
+                <a data-value="year">Year</a>
+                <a data-value="day">Select Day</a>
+                <a data-value="range">Select Range</a>
+            </div>
+            <div class="date-range-inputs">
+                <input type="text" id="startDate" placeholder="Start Date">
+                <input type="text" id="endDate" placeholder="End Date">
+                <button id="applyDateRange">Apply</button>
+            </div>
         </div>
 
         <div class="table-container">
@@ -187,24 +260,116 @@ require 'db.php';
                 ]
             });
 
-            // Filter functionality
-            $('#categoryFilter, #dateFilter').on('change', function() {
-                table.draw();
-                fetchChartData(); // Update chart based on filters
+            // Variables to keep track of date filters
+            var dateFilterOption = 'all';
+            var startDate = '';
+            var endDate = '';
+
+            // Initialize date picker inputs
+            $("#startDate, #endDate").datepicker({ dateFormat: 'yy-mm-dd' });
+
+            // Toggle the date filter options when the button is clicked
+            $("#dateFilterBtn").on('click', function() {
+                $("#dateFilterOptions").slideToggle('fast');
             });
 
+            // Handle date filter option selection
+            $("#dateFilterOptions a").on('click', function() {
+                var value = $(this).data('value');
+                $("#dateFilterOptions").hide();
+                
+                // Format the button text based on selection
+                let buttonText = '';
+                switch(value) {
+                    case 'today':
+                        buttonText = 'Today (' + moment().format('MMMM D') + ')';
+                        break;
+                    case 'week':
+                        buttonText = 'This Week (' + moment().startOf('week').format('MMM D') + 
+                                    ' - ' + moment().endOf('week').format('MMM D') + ')';
+                        break;
+                    case 'month':
+                        buttonText = 'This Month (' + moment().format('MMMM YYYY') + ')';
+                        break;
+                    case 'year':
+                        buttonText = 'This Year (' + moment().format('YYYY') + ')';
+                        break;
+                    default:
+                        buttonText = $(this).text();
+                }
+                
+                $("#dateFilterBtn").text(buttonText);
+                dateFilterOption = value;
+
+                if (value === 'range' || value === 'day') {
+                    $(".date-range-inputs").show();
+                    if (value === 'day') {
+                        $("#endDate").hide();
+                        $("#startDate").attr('placeholder', 'Select Date');
+                    } else {
+                        $("#endDate").show();
+                        $("#startDate").attr('placeholder', 'Start Date');
+                    }
+                } else {
+                    $(".date-range-inputs").hide();
+                    startDate = '';
+                    endDate = '';
+                    table.draw();
+                    fetchChartData();
+                }
+            });
+
+            // Apply date range filter
+            $("#applyDateRange").on('click', function() {
+                startDate = $("#startDate").val();
+                endDate = $("#endDate").val() || startDate;
+                
+                let buttonText = dateFilterOption === 'day' 
+                    ? 'Selected Day (' + moment(startDate).format('MMMM D, YYYY') + ')'
+                    : 'Date Range (' + moment(startDate).format('MMM D') + 
+                      ' - ' + moment(endDate).format('MMM D, YYYY') + ')';
+                
+                $("#dateFilterBtn").text(buttonText);
+                table.draw();
+                fetchChartData();
+            });
+
+            // Close the date filter options when clicking outside
+            $(document).on('click', function(event) {
+                if (!$(event.target).closest('#dateFilterBtn, #dateFilterOptions').length) {
+                    $("#dateFilterOptions").hide();
+                }
+            });
+
+            // Clear existing search functions to prevent conflicts
+            $.fn.dataTable.ext.search = [];
+
+            // Ensure only one DataTable search function is defined
             $.fn.dataTable.ext.search.push(
                 function(settings, data, dataIndex) {
                     let category = $('#categoryFilter').val();
-                    let date = $('#dateFilter').val();
-                    let rowCategory = data[2]; // Category column
-                    let rowDate = data[4].split(' ')[0]; // Timestamp column
-
-                    if ((category === "" || rowCategory === category) &&
-                        (date === "" || rowDate === date)) {
-                        return true;
+                    let rowCategory = data[2];
+                    if (category && rowCategory !== category) {
+                        return false;
                     }
-                    return false;
+
+                    let rowDate = data[4].split(' ')[0];
+                    if (dateFilterOption === 'all') {
+                        return true;
+                    } else if (dateFilterOption === 'today') {
+                        return rowDate === moment().format('YYYY-MM-DD');
+                    } else if (dateFilterOption === 'week') {
+                        return moment(rowDate).isSame(moment(), 'week');
+                    } else if (dateFilterOption === 'month') {
+                        return moment(rowDate).isSame(moment(), 'month');
+                    } else if (dateFilterOption === 'year') {
+                        return moment(rowDate).isSame(moment(), 'year');
+                    } else if (dateFilterOption === 'day') {
+                        return rowDate === startDate;
+                    } else if (dateFilterOption === 'range') {
+                        return moment(rowDate).isBetween(startDate, endDate, undefined, '[]');
+                    }
+                    return true;
                 }
             );
 
@@ -225,33 +390,20 @@ require 'db.php';
                     window.expenseChart.destroy();
                 }
                 window.expenseChart = new Chart(ctx, {
-                    type: 'bar',
+                    type: 'pie',
                     data: {
                         labels: categories.map(cat => cat.charAt(0).toUpperCase() + cat.slice(1)),
                         datasets: [{
-                            label: 'Total Expenses (NTD)',
                             data: totals,
-                            backgroundColor: [
-                                'rgba(255, 99, 132, 0.2)',
-                                'rgba(54, 162, 235, 0.2)',
-                                'rgba(255, 206, 86, 0.2)',
-                                'rgba(75, 192, 192, 0.2)'
-                            ],
-                            borderColor: [
-                                'rgba(255,99,132,1)',
-                                'rgba(54, 162, 235, 1)',
-                                'rgba(255, 206, 86, 1)',
-                                'rgba(75, 192, 192, 1)'
-                            ],
-                            borderWidth: 1
+                            backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0']
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
                             }
                         }
                     }
@@ -264,12 +416,29 @@ require 'db.php';
                     method: 'GET',
                     dataType: 'json',
                     success: function(data) {
-                        // Apply current filters
                         let category = $('#categoryFilter').val();
-                        let date = $('#dateFilter').val();
                         let filteredData = data.filter(record => {
-                            return (category === "" || record.category === category) &&
-                                (date === "" || record.timestamp.split(' ')[0] === date);
+                            let recordDate = record.createdOn.split(' ')[0];
+                            let withinDateRange = false;
+
+                            if (dateFilterOption === 'all') {
+                                withinDateRange = true;
+                            } else if (dateFilterOption === 'today') {
+                                withinDateRange = recordDate === moment().format('YYYY-MM-DD');
+                            } else if (dateFilterOption === 'week') {
+                                withinDateRange = moment(recordDate).isSame(moment(), 'week');
+                            } else if (dateFilterOption === 'month') {
+                                withinDateRange = moment(recordDate).isSame(moment(), 'month');
+                            } else if (dateFilterOption === 'year') {
+                                withinDateRange = moment(recordDate).isSame(moment(), 'year');
+                            } else if (dateFilterOption === 'day') {
+                                withinDateRange = recordDate === startDate;
+                            } else if (dateFilterOption === 'range') {
+                                withinDateRange = moment(recordDate).isBetween(startDate, endDate, undefined, '[]');
+                            }
+
+                            let matchesCategory = !category || record.category === category;
+                            return withinDateRange && matchesCategory;
                         });
                         createChart(filteredData);
                     },
