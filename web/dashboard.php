@@ -18,12 +18,15 @@ require 'db.php';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.css">
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <style>
         .dashboard-container {
             width: 80%;
@@ -47,6 +50,10 @@ require 'db.php';
         }
 
         #filterContainer {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
             background: white;
             padding: 20px;
             border-radius: 8px;
@@ -54,6 +61,12 @@ require 'db.php';
             margin-bottom: 20px;
             width: 100%;
             box-sizing: border-box;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         #filterContainer select,
@@ -82,6 +95,24 @@ require 'db.php';
             background: #f8f9fa;
             font-weight: 600;
             white-space: nowrap;
+            position: relative;
+        }
+
+        /* Fix for duplicate sort icons */
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting_desc:after {
+            content: "" !important;
+            display: none !important;
+        }
+
+        table.dataTable thead .sorting,
+        table.dataTable thead .sorting_asc,
+        table.dataTable thead .sorting_desc {
+            background-image: none !important;
         }
 
         #chartContainer {
@@ -122,15 +153,26 @@ require 'db.php';
             cursor: pointer;
             background-color: white;
             position: relative;
+            min-width: 200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+        }
+
+        #dateFilterBtn:after {
+            content: '▼';
+            font-size: 0.8em;
+            margin-left: 8px;
         }
 
         #dateFilterOptions {
             display: none;
             position: absolute;
             background-color: white;
-            min-width: 200px;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-            padding: 12px;
+            min-width: 250px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            padding: 8px 0;
             z-index: 1;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -139,10 +181,18 @@ require 'db.php';
 
         #dateFilterOptions a {
             color: black;
-            padding: 8px 12px;
+            padding: 10px 16px;
             text-decoration: none;
-            display: block;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
+        }
+
+        #dateFilterOptions a span.desc {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 8px;
         }
 
         #dateFilterOptions a:hover {
@@ -152,15 +202,17 @@ require 'db.php';
         .date-range-inputs {
             display: none;
             margin-top: 10px;
+            gap: 8px;
+            align-items: center;
         }
 
         .date-range-inputs input {
-            padding: 6px;
-            margin-right: 10px;
+            padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-family: 'Inter', sans-serif;
-            width: 120px;
+            width: 130px;
+            font-size: 0.9em;
         }
 
         .date-range-inputs button {
@@ -175,6 +227,13 @@ require 'db.php';
         .date-range-inputs button:hover {
             background-color: #45a049;
         }
+
+        /* Flatpickr customization */
+        .flatpickr-calendar {
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+        }
     </style>
 </head>
 
@@ -186,26 +245,31 @@ require 'db.php';
         </div>
 
         <div id="filterContainer">
-            <label for="categoryFilter">Category:</label>
-            <select id="categoryFilter">
-                <option value="">All</option>
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="dinner">Dinner</option>
-                <option value="snack">Snack</option>
-            </select>
-
-            <label for="dateFilterBtn">Date:</label>
-            <button id="dateFilterBtn">All Time</button>
-            <div id="dateFilterOptions">
-                <a data-value="all">All Time</a>
-                <a data-value="today">Today</a>
-                <a data-value="week">Week</a>
-                <a data-value="month">Month</a>
-                <a data-value="year">Year</a>
-                <a data-value="day">Select Day</a>
-                <a data-value="range">Select Range</a>
+            <div class="filter-group">
+                <label for="categoryFilter">Category:</label>
+                <select id="categoryFilter">
+                    <option value="">All</option>
+                    <option value="breakfast">Breakfast</option>
+                    <option value="lunch">Lunch</option>
+                    <option value="dinner">Dinner</option>
+                    <option value="snack">Snack</option>
+                </select>
             </div>
+
+            <div class="filter-group">
+                <label for="dateFilterBtn">Date:</label>
+                <button id="dateFilterBtn">All Time</button>
+                <div id="dateFilterOptions">
+                    <a data-value="all">All Time</a>
+                    <a data-value="today">Today <span class="desc">(<?php echo date('M d'); ?>)</span></a>
+                    <a data-value="week">This Week <span class="desc">(<?php echo date('M d', strtotime('monday this week')); ?> - <?php echo date('M d', strtotime('sunday this week')); ?>)</span></a>
+                    <a data-value="month">This Month <span class="desc">(<?php echo date('F Y'); ?>)</span></a>
+                    <a data-value="year">This Year <span class="desc">(<?php echo date('Y'); ?>)</span></a>
+                    <a data-value="day">Select Day</a>
+                    <a data-value="range">Select Range</a>
+                </div>
+            </div>
+
             <div class="date-range-inputs">
                 <input type="text" id="startDate" placeholder="Start Date">
                 <input type="text" id="endDate" placeholder="End Date">
@@ -217,11 +281,10 @@ require 'db.php';
             <table id="accounting" class="display">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Item</th>
-                        <th>Category</th>
-                        <th>Cost (NTD)</th>
                         <th>DateTime</th>
+                        <th>Category</th>
+                        <th>Item</th>
+                        <th>Cost (NTD)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -237,27 +300,53 @@ require 'db.php';
 
     <script>
         $(document).ready(function() {
+            // Initialize DataTable first
             let table = $('#accounting').DataTable({
+                "processing": true,
                 "ajax": {
                     "url": "fetch_data.php",
-                    "dataSrc": ""
-                },
-                "columns": [{
-                        "data": "aid"
-                    },
-                    {
-                        "data": "item"
-                    },
-                    {
-                        "data": "category"
-                    },
-                    {
-                        "data": "cost"
-                    },
-                    {
-                        "data": "createdOn"
+                    "dataSrc": function(json) {
+                        // Add error handling for the response
+                        if (json.error) {
+                            console.error('Server error:', json.message);
+                            return [];
+                        }
+                        return json || [];
                     }
-                ]
+                },
+                "columns": [
+                    { 
+                        "data": "createdOn",
+                        "render": function(data) {
+                            return moment(data).format('YYYY-MM-DD HH:mm');
+                        }
+                    },
+                    { "data": "category" },
+                    { "data": "item" },
+                    { 
+                        "data": "cost",
+                        "render": function(data) {
+                            return parseFloat(data).toLocaleString();
+                        }
+                    }
+                ],
+                "order": [[0, "desc"]] // Sort by DateTime by default
+            });
+
+            // Add category filter change event
+            $('#categoryFilter').on('change', function() {
+                table.draw();
+            });
+
+            // Add error event handler
+            table.on('error.dt', function(e, settings, techNote, message) {
+                console.error('DataTable error:', message);
+                alert('Error loading data. Please check console for details.');
+            });
+
+            // Debug DataTable initialization
+            table.on('error.dt', function(e, settings, techNote, message) {
+                console.log('DataTable error:', message);
             });
 
             // Variables to keep track of date filters
@@ -265,8 +354,31 @@ require 'db.php';
             var startDate = '';
             var endDate = '';
 
-            // Initialize date picker inputs
-            $("#startDate, #endDate").datepicker({ dateFormat: 'yy-mm-dd' });
+            // Initialize modern date pickers
+            const dateConfig = {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "F j, Y",
+                animate: true
+            };
+
+            const startDatePicker = flatpickr("#startDate", {
+                ...dateConfig,
+                onChange: function(selectedDates, dateStr) {
+                    if (dateFilterOption === 'range') {
+                        endDatePicker.set('minDate', dateStr);
+                    }
+                }
+            });
+
+            const endDatePicker = flatpickr("#endDate", {
+                ...dateConfig,
+                onChange: function(selectedDates, dateStr) {
+                    if (dateFilterOption === 'range') {
+                        startDatePicker.set('maxDate', dateStr);
+                    }
+                }
+            });
 
             // Toggle the date filter options when the button is clicked
             $("#dateFilterBtn").on('click', function() {
@@ -278,35 +390,22 @@ require 'db.php';
                 var value = $(this).data('value');
                 $("#dateFilterOptions").hide();
                 
-                // Format the button text based on selection
-                let buttonText = '';
-                switch(value) {
-                    case 'today':
-                        buttonText = 'Today (' + moment().format('MMMM D') + ')';
-                        break;
-                    case 'week':
-                        buttonText = 'This Week (' + moment().startOf('week').format('MMM D') + 
-                                    ' - ' + moment().endOf('week').format('MMM D') + ')';
-                        break;
-                    case 'month':
-                        buttonText = 'This Month (' + moment().format('MMMM YYYY') + ')';
-                        break;
-                    case 'year':
-                        buttonText = 'This Year (' + moment().format('YYYY') + ')';
-                        break;
-                    default:
-                        buttonText = $(this).text();
-                }
+                let buttonText = $(this).clone().children().remove().end().text().trim();
+                let description = $(this).find('.desc').text() || '';
                 
-                $("#dateFilterBtn").text(buttonText);
+                $("#dateFilterBtn").text(buttonText + ' ' + description);
                 dateFilterOption = value;
 
                 if (value === 'range' || value === 'day') {
                     $(".date-range-inputs").show();
                     if (value === 'day') {
+                        endDatePicker.destroy();
+                        startDatePicker.set('mode', 'single');
                         $("#endDate").hide();
                         $("#startDate").attr('placeholder', 'Select Date');
                     } else {
+                        startDatePicker.set('mode', 'single');
+                        endDatePicker = flatpickr("#endDate", dateConfig);
                         $("#endDate").show();
                         $("#startDate").attr('placeholder', 'Start Date');
                     }
@@ -348,12 +447,12 @@ require 'db.php';
             $.fn.dataTable.ext.search.push(
                 function(settings, data, dataIndex) {
                     let category = $('#categoryFilter').val();
-                    let rowCategory = data[2];
+                    let rowCategory = data[1];
                     if (category && rowCategory !== category) {
                         return false;
                     }
 
-                    let rowDate = data[4].split(' ')[0];
+                    let rowDate = data[0].split(' ')[0];
                     if (dateFilterOption === 'all') {
                         return true;
                     } else if (dateFilterOption === 'today') {
@@ -375,39 +474,44 @@ require 'db.php';
 
             // Fetch data and create chart
             function createChart(data) {
-                let categories = ['breakfast', 'lunch', 'dinner', 'snack'];
-                let totals = [0, 0, 0, 0];
+                try {
+                    let categories = ['breakfast', 'lunch', 'dinner', 'snack'];
+                    let totals = [0, 0, 0, 0];
 
-                data.forEach(record => {
-                    let index = categories.indexOf(record.category);
-                    if (index !== -1) {
-                        totals[index] += parseFloat(record.cost);
+                    data.forEach(record => {
+                        let index = categories.indexOf(record.category);
+                        if (index !== -1) {
+                            totals[index] += parseFloat(record.cost);
+                        }
+                    });
+
+                    let ctx = document.getElementById('expenseChart').getContext('2d');
+                    if (window.expenseChart instanceof Chart) {
+                        window.expenseChart.destroy();
                     }
-                });
-
-                let ctx = document.getElementById('expenseChart').getContext('2d');
-                if (window.expenseChart instanceof Chart) {
-                    window.expenseChart.destroy();
-                }
-                window.expenseChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: categories.map(cat => cat.charAt(0).toUpperCase() + cat.slice(1)),
-                        datasets: [{
-                            data: totals,
-                            backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
+                    window.expenseChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: categories.map(cat => cat.charAt(0).toUpperCase() + cat.slice(1)),
+                            datasets: [{
+                                data: totals,
+                                backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                    console.log('Chart data:', data); // Debug log
+                } catch (error) {
+                    console.error('Chart creation error:', error);
+                }
             }
 
             function fetchChartData() {
@@ -416,6 +520,7 @@ require 'db.php';
                     method: 'GET',
                     dataType: 'json',
                     success: function(data) {
+                        console.log('Fetched data:', data); // Debug log
                         let category = $('#categoryFilter').val();
                         let filteredData = data.filter(record => {
                             let recordDate = record.createdOn.split(' ')[0];
@@ -442,14 +547,31 @@ require 'db.php';
                         });
                         createChart(filteredData);
                     },
-                    error: function(error) {
-                        console.log("Error fetching data for chart:", error);
+                    error: function(xhr, status, error) {
+                        console.error('Fetch error:', error);
+                        console.log('Status:', status);
+                        console.log('Response:', xhr.responseText);
                     }
                 });
             }
 
             // Initial chart load
             fetchChartData();
+
+            // Update date descriptions dynamically
+            function updateDateDescriptions() {
+                let today = moment();
+                let weekStart = moment().startOf('week');
+                let weekEnd = moment().endOf('week');
+                
+                $('#dateFilterOptions a[data-value="today"] .desc').text(`(${today.format('MMM D')})`);
+                $('#dateFilterOptions a[data-value="week"] .desc').text(`(${weekStart.format('MMM D')} - ${weekEnd.format('MMM D')})`);
+                $('#dateFilterOptions a[data-value="month"] .desc').text(`(${today.format('MMMM YYYY')})`);
+                $('#dateFilterOptions a[data-value="year"] .desc').text(`(${today.format('YYYY')})`);
+            }
+
+            // Call this function when document is ready
+            updateDateDescriptions();
         });
     </script>
 </body>
