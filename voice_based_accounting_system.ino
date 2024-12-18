@@ -302,11 +302,11 @@ String sendToDeepgram() {
 }
 
 // 將合併的轉錄結果送到Cohere API解析
-void sendToComputer(String food, String price, String meal) {
+void sendToComputer(String food, int price, String meal) {
   // Prepare JSON payload
   String jsonData = "{";
   jsonData += "\"food\":\"" + food + "\",";
-  jsonData += "\"price\":\"" + price + "\",";
+  jsonData += "\"price\":\"" + String(price) + "\",";
   jsonData += "\"meal_type\":\"" + meal + "\"";
   jsonData += "}";
 
@@ -319,11 +319,21 @@ void sendToComputer(String food, String price, String meal) {
 
   int httpResponseCode = http.POST(jsonData);
 
-  if (httpResponseCode > 0) {
+  // Before HTTP request, add debug print
+Serial.println("Price value: " + String(price));
+
+// Fix the display text formatting
+if (httpResponseCode > 0) {
     String response = http.getString();
     Serial.println("Server response: " + response);
-    displayText("Data sent to server!\nFood: " + food + "\nPrice: " + price + "\nMeal: " + meal);
-     // 顯示結果在OLED
+    
+    // Convert price to String explicitly and build message
+    String message = "Data sent to server!\n\n";
+    message += "Food: " + food + "\n";
+    message += "Price: " + String(price) + "\n";  // Explicit conversion
+    message += "Meal: " + meal;
+    
+    displayText(message);
     
   } else {
      Serial.print("HTTP Error code: ");
@@ -342,7 +352,7 @@ void sendToCohere(String fullTranscript) {
     "Extract and identify the following information in JSON format:\\n"
     "{\\n"
     "  \\\"food\\\": \\\"<the food mentioned>\\\",\\n"
-    "  \\\"price\\\": \\\"<the price mentioned in dollars>\\\",\\n"
+    "  \\\"price\\\": \\\"<the price mentioned in dollars return number ONLY >\\\",\\n"
     "  \\\"meal_type\\\": \\\"<snack or breakfast or lunch or dinner>\\\"\\n"
     "}\\n\\n"
     "Return only the JSON object and no extra text.";
@@ -412,7 +422,7 @@ void sendToCohere(String fullTranscript) {
     // 現在 extracted 應該是完整的 JSON 顯示
     // 分析 extracted JSON 中的 food, price, meal_type
     String food = "";
-    String price = "";
+    int price = 0;
     String meal = "";
 
     int fIndex = extracted.indexOf("\"food\"");
@@ -426,14 +436,18 @@ void sendToCohere(String fullTranscript) {
     }
 
     int pIndex = extracted.indexOf("\"price\"");
-    if (pIndex != -1) {
+  if (pIndex != -1) {
       int colon = extracted.indexOf(":", pIndex);
-      int quote1 = extracted.indexOf("\"", colon);
-      int quote2 = extracted.indexOf("\"", quote1 + 1);
-      if (quote1 != -1 && quote2 != -1) {
-        price = extracted.substring(quote1 + 1, quote2);
+      int comma = extracted.indexOf(",", colon);
+      if (comma == -1) { // Handle case where price is last field
+          comma = extracted.indexOf("}", colon);
       }
-    }
+      if (colon != -1 && comma != -1) {
+          String priceStr = extracted.substring(colon + 1, comma);
+          // Remove whitespace and convert to integer
+          price = priceStr.toInt();
+      }
+  }
 
     int mIndex = extracted.indexOf("\"meal_type\"");
     if (mIndex != -1) {
