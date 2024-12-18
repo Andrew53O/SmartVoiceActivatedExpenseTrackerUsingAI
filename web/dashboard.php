@@ -27,6 +27,8 @@ require 'db.php';
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
+    <!-- Include Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <style>
         .dashboard-container {
             width: 80%;
@@ -402,6 +404,9 @@ require 'db.php';
         </div>
     </div>
 
+    <!-- Include Toastify JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
     <script>
         $(document).ready(function() {
             // Initialize DataTable first
@@ -687,6 +692,17 @@ require 'db.php';
             // Call this function when document is ready
             updateDateDescriptions();
 
+            // Function to show notifications
+            function showNotification(message, bgColor = "#4CAF50") {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: bgColor,
+                }).showToast();
+            }
+
             window.editRecord = function(id) {
                 const row = table.row($(`button[onclick="editRecord(${id})"]`).closest('tr')).data();
                 
@@ -708,6 +724,8 @@ require 'db.php';
                             if(response.success) {
                                 table.ajax.reload();
                                 fetchChartData();
+                                // Show notification
+                                showNotification('Record deleted successfully.', '#f44336');
                             } else {
                                 alert('Error deleting record: ' + (response.message || 'Unknown error'));
                             }
@@ -750,6 +768,8 @@ require 'db.php';
                             $('#editModal').hide();
                             table.ajax.reload();
                             fetchChartData();
+                            // Show notification
+                            showNotification('Record updated successfully.', '#2196F3');
                         } else {
                             alert('Error updating record: ' + (response.message || 'Unknown error'));
                         }
@@ -759,8 +779,50 @@ require 'db.php';
                     }
                 });
             });
+
+            // Keep track of the latest data timestamp
+            var latestDataTimestamp = null;
+
+            // Function to fetch the latest data timestamp
+            function fetchLatestTimestamp() {
+                $.ajax({
+                    url: 'fetch_latest_timestamp.php',
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            if (!latestDataTimestamp) {
+                                // Initialize the latest timestamp
+                                latestDataTimestamp = response.latestTimestamp;
+                            } else if (response.latestTimestamp > latestDataTimestamp) {
+                                // New data has arrived
+                                latestDataTimestamp = response.latestTimestamp;
+                                // Refresh the table and chart
+                                table.ajax.reload();
+                                fetchChartData();
+                                // Show notification
+                                showNotification('New data added.');
+                            }
+                        } else {
+                            console.error('Failed to fetch latest timestamp:', response.message);
+                        }
+                    },
+                    error: function() {
+                        console.error('Error fetching latest timestamp');
+                    }
+                });
+            }
+
+            // Periodically check for new data every 30 seconds
+            setInterval(fetchLatestTimestamp, 30000);
+
+            // Initial fetch of the latest timestamp
+            fetchLatestTimestamp();
+
+            // ...existing code...
         });
     </script>
+
 </body>
 
 </html>
