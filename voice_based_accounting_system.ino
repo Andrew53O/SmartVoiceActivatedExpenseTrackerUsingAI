@@ -77,13 +77,64 @@ void displayText(String text) {
   display.setTextColor(SSD1306_WHITE);
 
   int maxCharsPerLine = 21;
-  int start = 0;
-  int len = text.length();
-  while (start < len) {
-    String line = text.substring(start, min(start + maxCharsPerLine, len));
-    display.println(line);
-    start += maxCharsPerLine;
+  int currentY = 0;
+  int lineHeight = 8; // Height of one line in pixels
+  int maxLines = 8;   // Maximum lines that can fit on display (64/8)
+
+  // Split text by newlines first
+  String lines[8]; // Array to store lines
+  int lineCount = 0;
+  
+  int startPos = 0;
+  int nextNewline;
+  
+  // Handle explicit line breaks first
+  while ((nextNewline = text.indexOf('\n', startPos)) != -1 && lineCount < maxLines) {
+    String segment = text.substring(startPos, nextNewline);
+    // Word wrap long segments
+    while (segment.length() > maxCharsPerLine && lineCount < maxLines) {
+      int wrapPos = maxCharsPerLine;
+      // Look for last space before maxCharsPerLine
+      for (int i = maxCharsPerLine; i >= 0; i--) {
+        if (segment[i] == ' ') {
+          wrapPos = i;
+          break;
+        }
+      }
+      lines[lineCount++] = segment.substring(0, wrapPos);
+      segment = segment.substring(wrapPos + 1);
+    }
+    if (lineCount < maxLines && segment.length() > 0) {
+      lines[lineCount++] = segment;
+    }
+    startPos = nextNewline + 1;
   }
+  
+  // Handle remaining text
+  if (startPos < text.length() && lineCount < maxLines) {
+    String segment = text.substring(startPos);
+    while (segment.length() > maxCharsPerLine && lineCount < maxLines) {
+      int wrapPos = maxCharsPerLine;
+      for (int i = maxCharsPerLine; i >= 0; i--) {
+        if (segment[i] == ' ') {
+          wrapPos = i;
+          break;
+        }
+      }
+      lines[lineCount++] = segment.substring(0, wrapPos);
+      segment = segment.substring(wrapPos + 1);
+    }
+    if (lineCount < maxLines && segment.length() > 0) {
+      lines[lineCount++] = segment;
+    }
+  }
+
+  // Display the processed lines
+  for (int i = 0; i < lineCount; i++) {
+    display.setCursor(0, i * lineHeight);
+    display.println(lines[i]);
+  }
+  
   display.display();
 }
 
@@ -262,7 +313,7 @@ void sendToComputer(String food, String price, String meal) {
   // Send data to the server
   WiFiClient client;
   HTTPClient http;
-  String url = "http://192.168.0.102:8888/web/upload_data.php";  // Replace with your actual IP
+  String url = "http://192.168.121.66:8888/web/upload_data.php";  // Replace with your actual IP
   http.begin(client, url);
   http.addHeader("Content-Type", "application/json");
 

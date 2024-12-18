@@ -813,8 +813,8 @@ require 'db.php';
                 });
             }
 
-            // Periodically check for new data every 30 seconds
-            setInterval(fetchLatestTimestamp, 30000);
+            // Periodically check for new data every 5 seconds
+            setInterval(fetchLatestTimestamp, 5000);
 
             // Initial fetch of the latest timestamp
             fetchLatestTimestamp();
