@@ -234,6 +234,81 @@ require 'db.php';
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border-radius: 8px;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .edit-btn, .delete-btn, .save-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 2px;
+        }
+
+        .edit-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .save-btn {
+            background-color: #2196F3;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -285,6 +360,7 @@ require 'db.php';
                         <th>Category</th>
                         <th>Item</th>
                         <th>Cost (NTD)</th>
+                        <th>Actions</th>  <!-- Add this column -->
                     </tr>
                 </thead>
                 <tbody>
@@ -295,6 +371,34 @@ require 'db.php';
 
         <div id="chartContainer">
             <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Record</h2>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editCategory">Category:</label>
+                    <select id="editCategory" required>
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                        <option value="snack">Snack</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editItem">Item:</label>
+                    <input type="text" id="editItem" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCost">Cost:</label>
+                    <input type="number" id="editCost" required>
+                </div>
+                <button type="submit" class="save-btn">Save Changes</button>
+            </form>
         </div>
     </div>
 
@@ -328,6 +432,16 @@ require 'db.php';
                         "render": function(data) {
                             return parseFloat(data).toLocaleString();
                         }
+                    },
+                    {
+                        "data": "aid",
+                        "render": function(data, type, row) {
+                            return `
+                                <button class="edit-btn" onclick="editRecord(${data})">Edit</button>
+                                <button class="delete-btn" onclick="deleteRecord(${data})">Delete</button>
+                            `;
+                        },
+                        "orderable": false
                     }
                 ],
                 "order": [[0, "desc"]] // Sort by DateTime by default
@@ -572,6 +686,79 @@ require 'db.php';
 
             // Call this function when document is ready
             updateDateDescriptions();
+
+            window.editRecord = function(id) {
+                const row = table.row($(`button[onclick="editRecord(${id})"]`).closest('tr')).data();
+                
+                $('#editId').val(id);
+                $('#editCategory').val(row.category);
+                $('#editItem').val(row.item);
+                $('#editCost').val(row.cost);
+                
+                $('#editModal').show();
+            };
+
+            window.deleteRecord = function(id) {
+                if(confirm('Are you sure you want to delete this record?')) {
+                    $.ajax({
+                        url: 'delete_record.php',
+                        method: 'POST',
+                        data: { id: id },
+                        success: function(response) {
+                            if(response.success) {
+                                table.ajax.reload();
+                                fetchChartData();
+                            } else {
+                                alert('Error deleting record: ' + (response.message || 'Unknown error'));
+                            }
+                        },
+                        error: function() {
+                            alert('Error communicating with server');
+                        }
+                    });
+                }
+            };
+
+            // Close modal when clicking on X or outside the modal
+            $('.close').click(function() {
+                $('#editModal').hide();
+            });
+
+            $(window).click(function(event) {
+                if (event.target == $('#editModal')[0]) {
+                    $('#editModal').hide();
+                }
+            });
+
+            // Handle edit form submission
+            $('#editForm').submit(function(e) {
+                e.preventDefault();
+                
+                const data = {
+                    id: $('#editId').val(),
+                    category: $('#editCategory').val(),
+                    item: $('#editItem').val(),
+                    cost: $('#editCost').val()
+                };
+
+                $.ajax({
+                    url: 'edit_record.php',
+                    method: 'POST',
+                    data: data,
+                    success: function(response) {
+                        if(response.success) {
+                            $('#editModal').hide();
+                            table.ajax.reload();
+                            fetchChartData();
+                        } else {
+                            alert('Error updating record: ' + (response.message || 'Unknown error'));
+                        }
+                    },
+                    error: function() {
+                        alert('Error communicating with server');
+                    }
+                });
+            });
         });
     </script>
 </body>

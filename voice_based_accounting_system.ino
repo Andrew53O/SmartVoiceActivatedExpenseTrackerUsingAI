@@ -10,8 +10,12 @@
 #include <string.h>
 
 // ====== Your WiFi Credentials ======
-const char* ssid = "Xiaomi 11T";
-const char* password = "j9546028";
+// const char* ssid = "Xiaomi 11T";
+// const char* password = "j9546028";
+
+const char* ssid = "SUR";
+const char* password = "sunsurmat";
+
 
 // ====== Deepgram API Key ======
 const char* deepgram_api_key = "88b9708e621dc5345c55ba8c889ff573cdb6b0b5";
@@ -247,6 +251,40 @@ String sendToDeepgram() {
 }
 
 // 將合併的轉錄結果送到Cohere API解析
+void sendToComputer(String food, String price, String meal) {
+  // Prepare JSON payload
+  String jsonData = "{";
+  jsonData += "\"food\":\"" + food + "\",";
+  jsonData += "\"price\":\"" + price + "\",";
+  jsonData += "\"meal_type\":\"" + meal + "\"";
+  jsonData += "}";
+
+  // Send data to the server
+  WiFiClient client;
+  HTTPClient http;
+  String url = "http://192.168.0.102:8888/web/upload_data.php";  // Replace with your actual IP
+  http.begin(client, url);
+  http.addHeader("Content-Type", "application/json");
+
+  int httpResponseCode = http.POST(jsonData);
+
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("Server response: " + response);
+    displayText("Data sent to server!\nFood: " + food + "\nPrice: " + price + "\nMeal: " + meal);
+     // 顯示結果在OLED
+    
+  } else {
+     Serial.print("HTTP Error code: ");
+    Serial.println(httpResponseCode);
+    Serial.print("Error message: ");
+    Serial.println(http.errorToString(httpResponseCode));
+    displayText("Server error:\n" + String(httpResponseCode));
+  }
+
+  http.end();
+}
+
 void sendToCohere(String fullTranscript) {
   String prompt = 
     "Given the following transcript:\\n" + fullTranscript + "\\n\\n"
@@ -356,9 +394,8 @@ void sendToCohere(String fullTranscript) {
       }
     }
 
-    // 顯示結果在OLED
-    String resultDisplay = "Food:\n" + food + "\nPrice:\n" + price + "\nMeal:\n" + meal;
-    displayText(resultDisplay);
+    // Send data to computer
+    sendToComputer(food, price, meal);
 
   } else {
     Serial.print("Cohere request failed: ");
