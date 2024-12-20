@@ -1,5 +1,22 @@
 # Voice Based Accounting System
 
+Watch the demo here 
+https://youtu.be/Gmo6eBhH3jM
+
+## Prerequisites
+
+### Hardware
+
+- **ESP32 Development Board**
+- **OLED Display (SSD1306)**
+- **Microphone and Necessary Wiring (INMP441)**
+
+### Software
+
+- **Arduino IDE**
+- **XAMPP** (for running the local web server)
+- **Git** (optional, for version control)
+
 ## How to Use It on Your Local Computer
 
 ### Setup
