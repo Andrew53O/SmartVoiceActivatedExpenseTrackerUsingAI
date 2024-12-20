@@ -1,5 +1,9 @@
+# Setup
+1. Disable firewall temporarly to let esp32 access it
+2. ipconfig to see the ipv4
+3. Open xampp
 
-Disable firewall temporarly to let esp32 access it
+
 
 Problem displayin the line
 fix edit and delete

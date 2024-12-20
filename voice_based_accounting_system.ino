@@ -13,26 +13,25 @@
 // const char* ssid = "Xiaomi 11T";
 // const char* password = "j9546028";
 
-const char* ssid = "SUR";
-const char* password = "sunsurmat";
-
+const char *ssid = "SUR";
+const char *password = "sunsurmat";
 
 // ====== Deepgram API Key ======
-const char* deepgram_api_key = "88b9708e621dc5345c55ba8c889ff573cdb6b0b5";
+const char *deepgram_api_key = "88b9708e621dc5345c55ba8c889ff573cdb6b0b5";
 
 // ====== Cohere API Key ======
-const char* cohere_api_key = "5Fw3snDKeO4Kd3i2qno6fVMwDU0UAoV6f0M9AffT";
+const char *cohere_api_key = "0Khe705NuHP7naQApcEa018DDWM42ti7GQ8tfXsj";
 
 // ====== OLED ======
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET    -1
+#define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // ====== I2S Pins ======
-#define I2S_BCLK 14 
-#define I2S_WS   15 
-#define I2S_DIN  32
+#define I2S_BCLK 14
+#define I2S_WS 15
+#define I2S_DIN 32
 
 // ====== Clap Detection ======
 const int CLAP_THRESHOLD = 3000;
@@ -42,17 +41,18 @@ bool waitingForSecondClap = false;
 unsigned long lastClapTime = 0;
 
 // ====== Recording Params ======
-#define SAMPLE_RATE                6000
-#define RECORD_SEGMENT_SECONDS     5
-#define NUM_SAMPLES_PER_SEGMENT    (SAMPLE_RATE * RECORD_SEGMENT_SECONDS)
+#define SAMPLE_RATE 6000
+#define RECORD_SEGMENT_SECONDS 5
+#define NUM_SAMPLES_PER_SEGMENT (SAMPLE_RATE * RECORD_SEGMENT_SECONDS)
 int16_t audioBuffer[NUM_SAMPLES_PER_SEGMENT];
 
 // WAV header
-struct WAVHeader {
-  char riff[4];        
-  uint32_t chunkSize;  
-  char wave[4];        
-  char fmt[4];         
+struct WAVHeader
+{
+  char riff[4];
+  uint32_t chunkSize;
+  char wave[4];
+  char fmt[4];
   uint32_t subchunk1Size;
   uint16_t audioFormat;
   uint16_t numChannels;
@@ -60,7 +60,7 @@ struct WAVHeader {
   uint32_t byteRate;
   uint16_t blockAlign;
   uint16_t bitsPerSample;
-  char data[4];        
+  char data[4];
   uint32_t subchunk2Size;
 };
 
@@ -70,7 +70,8 @@ String transcript2 = "";
 
 // ====== Functions ======
 
-void displayText(String text) {
+void displayText(String text)
+{
   display.clearDisplay();
   display.setCursor(0, 0);
   display.setTextSize(1);
@@ -84,19 +85,23 @@ void displayText(String text) {
   // Split text by newlines first
   String lines[8]; // Array to store lines
   int lineCount = 0;
-  
+
   int startPos = 0;
   int nextNewline;
-  
+
   // Handle explicit line breaks first
-  while ((nextNewline = text.indexOf('\n', startPos)) != -1 && lineCount < maxLines) {
+  while ((nextNewline = text.indexOf('\n', startPos)) != -1 && lineCount < maxLines)
+  {
     String segment = text.substring(startPos, nextNewline);
     // Word wrap long segments
-    while (segment.length() > maxCharsPerLine && lineCount < maxLines) {
+    while (segment.length() > maxCharsPerLine && lineCount < maxLines)
+    {
       int wrapPos = maxCharsPerLine;
       // Look for last space before maxCharsPerLine
-      for (int i = maxCharsPerLine; i >= 0; i--) {
-        if (segment[i] == ' ') {
+      for (int i = maxCharsPerLine; i >= 0; i--)
+      {
+        if (segment[i] == ' ')
+        {
           wrapPos = i;
           break;
         }
@@ -104,19 +109,24 @@ void displayText(String text) {
       lines[lineCount++] = segment.substring(0, wrapPos);
       segment = segment.substring(wrapPos + 1);
     }
-    if (lineCount < maxLines && segment.length() > 0) {
+    if (lineCount < maxLines && segment.length() > 0)
+    {
       lines[lineCount++] = segment;
     }
     startPos = nextNewline + 1;
   }
-  
+
   // Handle remaining text
-  if (startPos < text.length() && lineCount < maxLines) {
+  if (startPos < text.length() && lineCount < maxLines)
+  {
     String segment = text.substring(startPos);
-    while (segment.length() > maxCharsPerLine && lineCount < maxLines) {
+    while (segment.length() > maxCharsPerLine && lineCount < maxLines)
+    {
       int wrapPos = maxCharsPerLine;
-      for (int i = maxCharsPerLine; i >= 0; i--) {
-        if (segment[i] == ' ') {
+      for (int i = maxCharsPerLine; i >= 0; i--)
+      {
+        if (segment[i] == ' ')
+        {
           wrapPos = i;
           break;
         }
@@ -124,74 +134,85 @@ void displayText(String text) {
       lines[lineCount++] = segment.substring(0, wrapPos);
       segment = segment.substring(wrapPos + 1);
     }
-    if (lineCount < maxLines && segment.length() > 0) {
+    if (lineCount < maxLines && segment.length() > 0)
+    {
       lines[lineCount++] = segment;
     }
   }
 
   // Display the processed lines
-  for (int i = 0; i < lineCount; i++) {
+  for (int i = 0; i < lineCount; i++)
+  {
     display.setCursor(0, i * lineHeight);
     display.println(lines[i]);
   }
-  
+
   display.display();
 }
 
-void setupDisplay() {
+void setupDisplay()
+{
   Wire.begin(GPIO_NUM_21, GPIO_NUM_22);
 
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  {
     Serial.println("SSD1306 allocation failed");
-    while(1);
+    while (1)
+      ;
   }
   displayText("Clap 2 times to start");
   Serial.println("OLED initialized.");
 }
 
-void setupI2S() {
+void setupI2S()
+{
   i2s_config_t i2s_config = {
-    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-    .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = I2S_COMM_FORMAT_I2S,
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = 8,
-    .dma_buf_len = 64,
-    .use_apll = false,
-    .tx_desc_auto_clear = false,
-    .fixed_mclk = 0
-  };
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+      .sample_rate = SAMPLE_RATE,
+      .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+      .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+      .communication_format = I2S_COMM_FORMAT_I2S,
+      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+      .dma_buf_count = 8,
+      .dma_buf_len = 64,
+      .use_apll = false,
+      .tx_desc_auto_clear = false,
+      .fixed_mclk = 0};
   i2s_pin_config_t pin_config = {
-    .bck_io_num = I2S_BCLK,
-    .ws_io_num = I2S_WS,
-    .data_out_num = I2S_PIN_NO_CHANGE,
-    .data_in_num = I2S_DIN
-  };
-  if (i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL) != ESP_OK) {
+      .bck_io_num = I2S_BCLK,
+      .ws_io_num = I2S_WS,
+      .data_out_num = I2S_PIN_NO_CHANGE,
+      .data_in_num = I2S_DIN};
+  if (i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL) != ESP_OK)
+  {
     Serial.println("I2S install failed");
-    while(1);
+    while (1)
+      ;
   }
-  if (i2s_set_pin(I2S_NUM_0, &pin_config) != ESP_OK) {
+  if (i2s_set_pin(I2S_NUM_0, &pin_config) != ESP_OK)
+  {
     Serial.println("I2S set pin failed");
-    while(1);
+    while (1)
+      ;
   }
   i2s_zero_dma_buffer(I2S_NUM_0);
   Serial.println("I2S initialized.");
 }
 
-int32_t readI2SSample() {
+int32_t readI2SSample()
+{
   int32_t sample = 0;
   size_t bytesRead;
   i2s_read(I2S_NUM_0, &sample, sizeof(sample), &bytesRead, portMAX_DELAY);
   return sample;
 }
 
-void recordAudio() {
+void recordAudio()
+{
   Serial.println("開始錄音...");
   displayText("Recording...");
-  for (int i = 0; i < NUM_SAMPLES_PER_SEGMENT; i++) {
+  for (int i = 0; i < NUM_SAMPLES_PER_SEGMENT; i++)
+  {
     int32_t s = readI2SSample();
     audioBuffer[i] = (int16_t)(s >> 16);
   }
@@ -199,7 +220,8 @@ void recordAudio() {
   displayText("Recording Done!");
 }
 
-void createWavHeader(uint8_t* buffer, uint32_t totalAudioLen) {
+void createWavHeader(uint8_t *buffer, uint32_t totalAudioLen)
+{
   WAVHeader header;
   memcpy(header.riff, "RIFF", 4);
   memcpy(header.wave, "WAVE", 4);
@@ -214,22 +236,24 @@ void createWavHeader(uint8_t* buffer, uint32_t totalAudioLen) {
   header.byteRate = header.sampleRate * header.numChannels * (header.bitsPerSample / 8);
   header.blockAlign = header.numChannels * (header.bitsPerSample / 8);
 
-  header.subchunk2Size = totalAudioLen; 
+  header.subchunk2Size = totalAudioLen;
   header.chunkSize = 36 + header.subchunk2Size;
 
   memcpy(buffer, &header, sizeof(WAVHeader));
 }
 
-uint8_t* createWavData() {
+uint8_t *createWavData()
+{
   uint32_t pcmDataSize = NUM_SAMPLES_PER_SEGMENT * sizeof(int16_t);
   uint32_t wavSize = sizeof(WAVHeader) + pcmDataSize;
-  
+
   Serial.print("Attempting to allocate WAV data (");
   Serial.print(wavSize);
   Serial.println(" bytes).");
-  
-  uint8_t* wavData = (uint8_t*)malloc(wavSize);
-  if (!wavData) {
+
+  uint8_t *wavData = (uint8_t *)malloc(wavSize);
+  if (!wavData)
+  {
     Serial.println("WAV記憶體配置失敗");
     displayText("WAV mem fail");
     return NULL;
@@ -241,21 +265,26 @@ uint8_t* createWavData() {
   return wavData;
 }
 
-String parseTranscriptString(String payload) {
+String parseTranscriptString(String payload)
+{
   int startIndex = payload.indexOf("\"transcript\":\"");
-  if (startIndex != -1) {
+  if (startIndex != -1)
+  {
     startIndex += 14;
     int endIndex = payload.indexOf("\"", startIndex);
-    if (endIndex != -1) {
+    if (endIndex != -1)
+    {
       return payload.substring(startIndex, endIndex);
     }
   }
   return "";
 }
 
-String sendToDeepgram() {
-  uint8_t* wavData = createWavData();
-  if (!wavData) return "";
+String sendToDeepgram()
+{
+  uint8_t *wavData = createWavData();
+  if (!wavData)
+    return "";
 
   Serial.print("Free heap: ");
   Serial.println(ESP.getFreeHeap());
@@ -280,7 +309,8 @@ String sendToDeepgram() {
   int httpResponseCode = http.POST(wavData, wavSize);
 
   String result = "";
-  if (httpResponseCode > 0) {
+  if (httpResponseCode > 0)
+  {
     Serial.print("HTTP 響應碼: ");
     Serial.println(httpResponseCode);
     String payload = http.getString();
@@ -289,7 +319,9 @@ String sendToDeepgram() {
     result = parseTranscriptString(payload);
     Serial.print("Transcription: ");
     Serial.println(result);
-  } else {
+  }
+  else
+  {
     Serial.print("HTTP error code: ");
     Serial.println(httpResponseCode);
     Serial.println(http.errorToString(httpResponseCode));
@@ -302,7 +334,8 @@ String sendToDeepgram() {
 }
 
 // 將合併的轉錄結果送到Cohere API解析
-void sendToComputer(String food, int price, String meal) {
+void sendToComputer(String food, int price, String meal)
+{
   // Prepare JSON payload
   String jsonData = "{";
   jsonData += "\"food\":\"" + food + "\",";
@@ -313,30 +346,32 @@ void sendToComputer(String food, int price, String meal) {
   // Send data to the server
   WiFiClient client;
   HTTPClient http;
-  String url = "http://192.168.121.66:8888/web/upload_data.php";  // Replace with your actual IP
+  String url = "http://192.168.121.66:8888/web/upload_data.php"; // Replace with your actual IP
   http.begin(client, url);
   http.addHeader("Content-Type", "application/json");
 
   int httpResponseCode = http.POST(jsonData);
 
   // Before HTTP request, add debug print
-Serial.println("Price value: " + String(price));
+  Serial.println("Price value: " + String(price));
 
-// Fix the display text formatting
-if (httpResponseCode > 0) {
+  // Fix the display text formatting
+  if (httpResponseCode > 0)
+  {
     String response = http.getString();
     Serial.println("Server response: " + response);
-    
+
     // Convert price to String explicitly and build message
     String message = "Data sent to server!\n\n";
     message += "Food: " + food + "\n";
-    message += "Price: " + String(price) + "\n";  // Explicit conversion
+    message += "Price: " + String(price) + "\n"; // Explicit conversion
     message += "Meal: " + meal;
-    
+
     displayText(message);
-    
-  } else {
-     Serial.print("HTTP Error code: ");
+  }
+  else
+  {
+    Serial.print("HTTP Error code: ");
     Serial.println(httpResponseCode);
     Serial.print("Error message: ");
     Serial.println(http.errorToString(httpResponseCode));
@@ -346,21 +381,24 @@ if (httpResponseCode > 0) {
   http.end();
 }
 
-void sendToCohere(String fullTranscript) {
-  String prompt = 
-    "Given the following transcript:\\n" + fullTranscript + "\\n\\n"
-    "Extract and identify the following information in JSON format:\\n"
-    "{\\n"
-    "  \\\"food\\\": \\\"<the food mentioned>\\\",\\n"
-    "  \\\"price\\\": \\\"<the price mentioned in dollars return number ONLY >\\\",\\n"
-    "  \\\"meal_type\\\": \\\"<snack or breakfast or lunch or dinner>\\\"\\n"
-    "}\\n\\n"
-    "Return only the JSON object and no extra text.";
+void sendToCohere(String fullTranscript)
+{
+  String prompt =
+      "Given the following transcript:\\n" + fullTranscript + "\\n\\n"
+                                                              "Extract and identify the following information in JSON format. "
+                                                              "If information is not found, use empty string for text fields and 0 for price:\\n"
+                                                              "{\\n"
+                                                              "  \\\"food\\\": \\\"<the food mentioned or empty string if not found>\\\",\\n"
+                                                              "  \\\"price\\\": <the price in numbers only or 0 if not found>,\\n"
+                                                              "  \\\"meal_type\\\": \\\"<breakfast/lunch/dinner/snack or empty string if not found>\\\"\\n"
+                                                              "}\\n\\n"
+                                                              "Return only the JSON object and no extra text. "
+                                                              "The price must be a number without quotes, all other fields use quotes.";
 
   displayText("Asking Cohere...");
 
   WiFiClientSecure client;
-  client.setInsecure();  
+  client.setInsecure();
   HTTPClient http;
   String url = "https://api.cohere.com/v1/generate";
   http.begin(client, url);
@@ -374,8 +412,9 @@ void sendToCohere(String fullTranscript) {
   requestData += "\"temperature\":0.0";
   requestData += "}";
 
-  int httpResponseCode = http.POST((uint8_t*)requestData.c_str(), requestData.length());
-  if (httpResponseCode > 0) {
+  int httpResponseCode = http.POST((uint8_t *)requestData.c_str(), requestData.length());
+  if (httpResponseCode > 0)
+  {
     Serial.print("Cohere HTTP code: ");
     Serial.println(httpResponseCode);
     String payload = http.getString();
@@ -386,25 +425,35 @@ void sendToCohere(String fullTranscript) {
     int textKeyPos = payload.indexOf("\"text\":\"");
     String extracted = "";
 
-    if (textKeyPos != -1) {
-      int start = textKeyPos + 8; // 跳過 "text":" 
+    if (textKeyPos != -1)
+    {
+      int start = textKeyPos + 8; // 跳過 "text":"
       bool inEscape = false;      // 標記上一個字元是否為反斜線
       char c;
-      for (int i = start; i < payload.length(); i++) {
+      for (int i = start; i < payload.length(); i++)
+      {
         c = payload.charAt(i);
 
-        if (inEscape) {
+        if (inEscape)
+        {
           // 前一字元是 '\\'，此字元無論如何都加入字串
           extracted += c;
           inEscape = false;
-        } else {
-          if (c == '\\') {
+        }
+        else
+        {
+          if (c == '\\')
+          {
             // 如果遇到 '\\'，下個字元要特別處理
             inEscape = true;
-          } else if (c == '\"') {
+          }
+          else if (c == '\"')
+          {
             // 遇到非轉義的 '"' 表示字串結束
             break;
-          } else {
+          }
+          else
+          {
             // 一般字元，直接加入
             extracted += c;
           }
@@ -426,43 +475,51 @@ void sendToCohere(String fullTranscript) {
     String meal = "";
 
     int fIndex = extracted.indexOf("\"food\"");
-    if (fIndex != -1) {
+    if (fIndex != -1)
+    {
       int colon = extracted.indexOf(":", fIndex);
       int quote1 = extracted.indexOf("\"", colon);
       int quote2 = extracted.indexOf("\"", quote1 + 1);
-      if (quote1 != -1 && quote2 != -1) {
+      if (quote1 != -1 && quote2 != -1)
+      {
         food = extracted.substring(quote1 + 1, quote2);
       }
     }
 
     int pIndex = extracted.indexOf("\"price\"");
-  if (pIndex != -1) {
+    if (pIndex != -1)
+    {
       int colon = extracted.indexOf(":", pIndex);
       int comma = extracted.indexOf(",", colon);
-      if (comma == -1) { // Handle case where price is last field
-          comma = extracted.indexOf("}", colon);
+      if (comma == -1)
+      { // Handle case where price is last field
+        comma = extracted.indexOf("}", colon);
       }
-      if (colon != -1 && comma != -1) {
-          String priceStr = extracted.substring(colon + 1, comma);
-          // Remove whitespace and convert to integer
-          price = priceStr.toInt();
+      if (colon != -1 && comma != -1)
+      {
+        String priceStr = extracted.substring(colon + 1, comma);
+        // Remove whitespace and convert to integer
+        price = priceStr.toInt();
       }
-  }
+    }
 
     int mIndex = extracted.indexOf("\"meal_type\"");
-    if (mIndex != -1) {
+    if (mIndex != -1)
+    {
       int colon = extracted.indexOf(":", mIndex);
       int quote1 = extracted.indexOf("\"", colon);
       int quote2 = extracted.indexOf("\"", quote1 + 1);
-      if (quote1 != -1 && quote2 != -1) {
+      if (quote1 != -1 && quote2 != -1)
+      {
         meal = extracted.substring(quote1 + 1, quote2);
       }
     }
 
     // Send data to computer
     sendToComputer(food, price, meal);
-
-  } else {
+  }
+  else
+  {
     Serial.print("Cohere request failed: ");
     Serial.println(httpResponseCode);
     displayText("Cohere err:\n" + String(httpResponseCode));
@@ -471,8 +528,8 @@ void sendToCohere(String fullTranscript) {
   http.end();
 }
 
-
-void startTwoSegmentRecording() {
+void startTwoSegmentRecording()
+{
   displayText("Listening...");
 
   // 第一段錄製 + 上傳
@@ -493,12 +550,13 @@ void startTwoSegmentRecording() {
   // 合併顯示
   String combined = transcript1 + " " + transcript2;
   displayText("Done.\nAsking Cohere...");
-  
+
   // 將 combined 傳給 Cohere解析
   sendToCohere(combined);
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   Serial.println("連線中...");
 
@@ -506,7 +564,8 @@ void setup() {
 
   WiFi.begin(ssid, password);
   Serial.print("連接WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
   }
@@ -517,29 +576,37 @@ void setup() {
   setupI2S();
 }
 
-void loop() {
+void loop()
+{
   int32_t sample = readI2SSample();
   int32_t val = abs(sample >> 16);
 
   unsigned long currentTime = millis();
 
-  if (val > CLAP_THRESHOLD && (currentTime - lastClapTime > CLAP_COOLDOWN)) {
-    lastClapTime = currentTime; 
-    if (!waitingForSecondClap) {
+  if (val > CLAP_THRESHOLD && (currentTime - lastClapTime > CLAP_COOLDOWN))
+  {
+    lastClapTime = currentTime;
+    if (!waitingForSecondClap)
+    {
       firstClapTime = currentTime;
       waitingForSecondClap = true;
       Serial.println("First clap detected, waiting for second...");
       displayText("First clap!\nWait second...");
-    } else {
+    }
+    else
+    {
       unsigned long delta = currentTime - firstClapTime;
-      if (delta < 1000) {
+      if (delta < 1000)
+      {
         Serial.println("Double clap detected!");
         displayText("Double clap!");
         waitingForSecondClap = false;
 
         // 開始錄音兩段
         startTwoSegmentRecording();
-      } else {
+      }
+      else
+      {
         firstClapTime = currentTime;
         Serial.println("Time exceeded, reset to first clap.");
         displayText("Time exceeded,\nreset clap");
@@ -547,7 +614,8 @@ void loop() {
     }
   }
 
-  if (waitingForSecondClap && (currentTime - firstClapTime > 1000)) {
+  if (waitingForSecondClap && (currentTime - firstClapTime > 1000))
+  {
     waitingForSecondClap = false;
     Serial.println("Waiting for second clap timed out.");
     displayText("Second clap\ntimeout");
