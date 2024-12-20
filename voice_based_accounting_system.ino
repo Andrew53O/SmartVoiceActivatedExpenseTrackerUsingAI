@@ -9,18 +9,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
+
+// ... existing includes and code ...
+
 // ====== Your WiFi Credentials ======
 // const char* ssid = "Xiaomi 11T";
 // const char* password = "j9546028";
 
-const char *ssid = "SUR";
-const char *password = "sunsurmat";
+const char *ssid = "SUR"; // Wifi Id
+const char *password = "sunsurmat"; // Wifi password 
 
-// ====== Deepgram API Key ======
-const char *deepgram_api_key = "88b9708e621dc5345c55ba8c889ff573cdb6b0b5";
 
-// ====== Cohere API Key ======
-const char *cohere_api_key = "0Khe705NuHP7naQApcEa018DDWM42ti7GQ8tfXsj";
 
 // ====== OLED ======
 #define SCREEN_WIDTH 128
@@ -346,7 +346,7 @@ void sendToComputer(String food, int price, String meal)
   // Send data to the server
   WiFiClient client;
   HTTPClient http;
-  String url = "http://192.168.121.66:8888/web/upload_data.php"; // Replace with your actual IP
+  http.begin(client, server_url); // Use server_url from config.h
   http.begin(client, url);
   http.addHeader("Content-Type", "application/json");
 
